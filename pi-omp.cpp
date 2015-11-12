@@ -50,9 +50,11 @@ int main(int argc, char* argv[]) {
 
     cout << "Shifting " << num_bits << " bits - Total iterations will be " << iterations << " Progress modulus " << progress << endl;
 
-    //  Mark begin tome
+  /*  //  Mark begin tome
     std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
 
+*/
+    double start_time = omp_get_wtime();
 
     const uint64_t samples = iterations;
 
@@ -101,18 +103,16 @@ int main(int argc, char* argv[]) {
     }
 
 
-    std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
-
+ /*   std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
     std::cout << "Time was " << std::chrono::duration_cast<chrono::microseconds>(end - begin).count() / 1000000.f << " seconds " << std::endl;
-    //std::cout << "Time difference = " << std::chrono::duration_cast<chrono::nanoseconds> (end - begin).count() <<std::endl;
-
-
-
+*/
+    double run_time = omp_get_wtime() - start_time;
 
 
     // print result
     //std::cout << "pi = " << 4.0*in / samples << endl <<  "Threads " << num_threads << std::endl;
-    std::cout << "pi2 = " << 4.0*in2 / samples << endl <<  "Threads " << num_threads << std::endl;
+    std::cout << "pi2 = " << 4.0*in2 / samples << endl <<  "Threads " << num_threads <<
+            " in " <<  setprecision (5)  << run_time  << " seconds " << std::endl;
 
     return EXIT_SUCCESS;
 
