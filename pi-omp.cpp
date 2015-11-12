@@ -9,6 +9,11 @@
 #include <iostream>
 #include <omp.h>
 #include <trng/yarn2.hpp>
+#include <trng/mt19937.hpp>
+#include <trng/lcg64.hpp>
+
+#include <trng/mt19937_64.hpp>
+
 #include <trng/uniform01_dist.hpp>
 #include <inttypes.h>
 #include <chrono>
@@ -65,7 +70,8 @@ int main(int argc, char* argv[]) {
     //  Launches team of threads
 #pragma omp parallel reduction(+:points_inside, in2)
     {
-        trng::yarn2 r;
+     //   trng::yarn2 r;
+        trng::lcg64 r;
         int size = omp_get_num_threads();
         int rank = omp_get_thread_num();
         //  Save number of threads
