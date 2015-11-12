@@ -11,10 +11,10 @@ pi-omp.o: pi-omp.cpp
 mic:  pi-mic
 
 pi-mic: pi-mic.o
-	icc -o pi-mic pi-mic.o -l:libtrng4.a -lgomp
+	icc -o pi-mic pi-mic.o -l:libtrng4.a -lomp
 
 pi-mic.o: pi-omp.cpp
-	icc -std=c++11 -mmic -fopenmp -o pi-mic.o -c pi-mic.cpp
+	icc -std=c++11 -mmic -fopenmp -I ../trng-4.18/build/mic -o pi-mic.o -c pi-omp.cpp
 
 
 
