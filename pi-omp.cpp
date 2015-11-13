@@ -10,6 +10,9 @@
 #include <omp.h>
 #include <trng/yarn2.hpp>
 #include <trng/mt19937.hpp>
+#include <trng/mt19937_64.hpp>
+#include <trng/mrg2.hpp>
+
 #include <trng/lcg64.hpp>
 
 #include <trng/mt19937_64.hpp>
@@ -71,7 +74,8 @@ int main(int argc, char* argv[]) {
 #pragma omp parallel reduction(+:points_inside, in2)
     {
      //   trng::yarn2 r;
-        trng::lcg64 r;
+      //  trng::lcg64 r;
+        trng::mrg2 r;
         int size = omp_get_num_threads();
         int rank = omp_get_thread_num();
         //  Save number of threads
