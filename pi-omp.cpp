@@ -68,10 +68,11 @@ int main(int argc, char* argv[]) {
 
     // number of points in circle
     uint64_t points_inside = 0;
-    uint64_t in2 = 0;
+ //   uint64_t in2 = 0;
 
     //  Launches team of threads
-#pragma omp parallel reduction(+:points_inside, in2)
+#pragma omp parallel reduction(+:points_inside)
+#pragma acc kernels
     {
         trng::yarn2 r;
       //  trng::lcg64 r;
@@ -83,6 +84,9 @@ int main(int argc, char* argv[]) {
             num_threads = size;
         }
         // random number distribution
+#pragma acc routine(trng::utility::u01xx_traits<double, (unsigned long)1, trng::yarn2>::addin) seq
+//#pragma acc routine(trng::utility::u01xx_traits::addin) seq
+
         trng::uniform01_dist<> u;
         //  Synchronize thread phase int4erval for RNG
     //    r.jump (4 * (rank * samples / size));
@@ -96,7 +100,7 @@ int main(int argc, char* argv[]) {
                 if ((i % progress) == 0) {
                     cout << "." << flush;
                 }
-                ++in2;
+                ++points_inside;
             }
         }
 /*
@@ -121,7 +125,7 @@ int main(int argc, char* argv[]) {
 
     // print result
     //std::cout << "pi = " << 4.0*in / samples << endl <<  "Threads " << num_threads << std::endl;
-    std::cout << "pi2 = " << 4.0*in2 / samples << endl <<  "Threads " << num_threads <<
+    std::cout << "pi2 = " << 4.0 * points_inside / samples << endl <<  "Threads " << num_threads <<
             " in " <<  setprecision (5)  << run_time  << " seconds " << std::endl;
 
     return EXIT_SUCCESS;
@@ -183,3 +187,5 @@ int main(int argc, char* argv[]) {
  */
 
 }
+//#pragma acc routine seq
+
