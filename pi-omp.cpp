@@ -77,21 +77,25 @@ int main(int argc, char* argv[]) {
         trng::yarn2 r;
       //  trng::lcg64 r;
       //  trng::mrg2 r;
-        int size = omp_get_num_threads();
+        num_threads = omp_get_num_threads();
         int rank = omp_get_thread_num();
-        //  Save number of threads
-        if (rank == 0) {
-            num_threads = size;
-        }
+
         // random number distribution
 #pragma acc routine(trng::utility::u01xx_traits<double, (unsigned long)1, trng::yarn2>::addin) seq
 //#pragma acc routine(trng::utility::u01xx_traits::addin) seq
 
         trng::uniform01_dist<> u;
         //  Synchronize thread phase int4erval for RNG
-    //    r.jump (4 * (rank * samples / size));
-        r.jump (2 * (rank * samples / size));
 
+      //  r.jump (2 * (rank * samples / size));
+        uint64_t old_jump =  (rank * samples / num_threads);
+
+
+        uint64_t jump = static_cast<uint64_t>(
+            static_cast<double>(iterations) / static_cast<double>(num_threads) * static_cast<double>(rank)
+        );
+        r.jump(jump);
+        cout << "Jump for thread " << rank << " is " << jump << " old " << old_jump << endl;
 
 #pragma omp for
         for (uint64_t i = 0; i < iterations; i++) {
@@ -103,17 +107,6 @@ int main(int argc, char* argv[]) {
                 ++points_inside;
             }
         }
-/*
-        // throw random points into square
-        for (uint64_t i = rank*samples/size; i < (rank+1)*samples/size; ++i) {
-            double x=u(r), y=u(r);            // choose random x- and y-coordinates
-            if (x*x+y*y<=1.0)                 // is point in circle?
-                ++in;                           // increase thread-local counter
-        }
-*/
-
-
-
     }
 
 
