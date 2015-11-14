@@ -3,37 +3,57 @@
  *  Experimental Parallel Monte Carlo Pi Estomator
  *
  */
+#ifdef _OPENACC
+//lkj;
+#endif
 
 
 #include <cstdlib>
 #include <iostream>
 #include <omp.h>
+#ifndef _OPENACC
+
 #include <trng/yarn2.hpp>
 #include <trng/mt19937.hpp>
 #include <trng/mt19937_64.hpp>
 #include <trng/mrg2.hpp>
-
 #include <trng/lcg64.hpp>
-
 #include <trng/mt19937_64.hpp>
-
 #include <trng/uniform01_dist.hpp>
+
+#endif
+//#include <limits>
+
 #include <inttypes.h>
 #include <chrono>
+#include <limits>
+
+#include <iomanip>
+
 
 
 class NumberGenerator {
 protected:
+#ifndef _OPENACC
     trng::yarn2 r;
     // random number distribution
     trng::uniform01_dist<> u;
+#endif
     uint64_t thread__interval;
 public:
     NumberGenerator(uint64_t thread__interval) : thread__interval(thread__interval){
+#ifndef _OPENACC
         r.jump (thread__interval);
+#endif
     }
+ //   #pragma acc routine seq
     double rand() {
+#ifndef _OPENACC
         return u(r);
+#else
+// TODO: Curand()
+        return 0.f;
+#endif
     }
 };
 
@@ -102,9 +122,9 @@ int main(int argc, char* argv[]) {
 
         NumberGenerator generator(thread__interval);
 
-#pragma acc routine(trng::utility::u01xx_traits<double, (unsigned long)1, trng::yarn2>::addin) seq
+//#pragma acc routine(trng::utility::u01xx_traits<double, (unsigned long)1, trng::yarn2>::addin) seq
 
-        uint64_t old_jump =  (rank * iterations / num_threads);
+     //   uint64_t old_jump =  (rank * iterations / num_threads);
 
         ///    cout << "Jump for thread " << rank << " is " << jump << " old " << old_jump << endl;
 
@@ -114,7 +134,7 @@ int main(int argc, char* argv[]) {
             double y = generator.rand();
             if (x * x + y * y <= 1.0) {
                 if ((i % progress) == 0) {
-                    cout << "." << flush;
+                 //   cout << "." << flush;
                 }
                 ++points_inside;
             }
@@ -123,7 +143,7 @@ int main(int argc, char* argv[]) {
     }
 
     double run_time = omp_get_wtime() - start_time;
-    
+
     std::cout << "pi2 = " << 4.0 * points_inside / iterations << endl <<  "Threads " << num_threads <<
             " in " <<  setprecision (5)  << run_time  << " seconds " << std::endl;
 
