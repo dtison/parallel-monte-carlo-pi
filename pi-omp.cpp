@@ -22,6 +22,30 @@
 #include <chrono>
 
 
+class NumberGenerator {
+protected:
+    trng::yarn2 r;
+    // random number distribution
+    trng::uniform01_dist<> u;
+    uint64_t thread__interval;
+public:
+    NumberGenerator(uint64_t thread__interval) : thread__interval(thread__interval){
+        r.jump (thread__interval);
+    }
+    double rand() {
+        return u(r);
+    }
+};
+
+/*
+ * 3.141561683794713
+ * 3.141561683794713
+ *
+
+ */
+
+
+
 using namespace std;
 
 #define NUM_BITS 4
@@ -31,7 +55,6 @@ uint64_t count = 0;						//Count holds all the number of how many good coordinat
 int num_threads;
 
 int main(int argc, char* argv[]) {
-
 
     //  This value is 2**24 anout 16.7 M
     uint64_t iterations = 0x0000000000FFFFFF;
@@ -58,48 +81,37 @@ int main(int argc, char* argv[]) {
 
     cout << "Shifting " << num_bits << " bits - Total iterations will be " << iterations << " Progress modulus " << progress << endl;
 
-  /*  //  Mark begin tome
-    std::chrono::steady_clock::time_point begin = std::chrono::steady_clock::now();
-
-*/
     double start_time = omp_get_wtime();
-
-    const uint64_t samples = iterations;
 
     // number of points in circle
     uint64_t points_inside = 0;
- //   uint64_t in2 = 0;
 
     //  Launches team of threads
 #pragma omp parallel reduction(+:points_inside)
 #pragma acc kernels
     {
-        trng::yarn2 r;
-      //  trng::lcg64 r;
-      //  trng::mrg2 r;
         num_threads = omp_get_num_threads();
         int rank = omp_get_thread_num();
 
-        // random number distribution
+        //  Determine this thread's series interval / qty of numbers that will be consumed by this thread
+        uint64_t thread__interval = 2 * static_cast<uint64_t>(
+      //          static_cast<double>(iterations) / static_cast<double>(num_threads) * static_cast<double>(rank)
+                static_cast<double>(iterations) / num_threads * rank
+
+                                        );
+
+        NumberGenerator generator(thread__interval);
+
 #pragma acc routine(trng::utility::u01xx_traits<double, (unsigned long)1, trng::yarn2>::addin) seq
-//#pragma acc routine(trng::utility::u01xx_traits::addin) seq
 
-        trng::uniform01_dist<> u;
-        //  Synchronize thread phase int4erval for RNG
+        uint64_t old_jump =  (rank * iterations / num_threads);
 
-      //  r.jump (2 * (rank * samples / size));
-        uint64_t old_jump =  (rank * samples / num_threads);
-
-
-        uint64_t jump = static_cast<uint64_t>(
-            static_cast<double>(iterations) / static_cast<double>(num_threads) * static_cast<double>(rank)
-        );
-        r.jump(jump);
-        cout << "Jump for thread " << rank << " is " << jump << " old " << old_jump << endl;
+        ///    cout << "Jump for thread " << rank << " is " << jump << " old " << old_jump << endl;
 
 #pragma omp for
         for (uint64_t i = 0; i < iterations; i++) {
-            double x = u(r), y = u(r);
+            double x = generator.rand();
+            double y = generator.rand();
             if (x * x + y * y <= 1.0) {
                 if ((i % progress) == 0) {
                     cout << "." << flush;
@@ -107,18 +119,12 @@ int main(int argc, char* argv[]) {
                 ++points_inside;
             }
         }
+        cout << endl;
     }
 
-
- /*   std::chrono::steady_clock::time_point end= std::chrono::steady_clock::now();
-    std::cout << "Time was " << std::chrono::duration_cast<chrono::microseconds>(end - begin).count() / 1000000.f << " seconds " << std::endl;
-*/
     double run_time = omp_get_wtime() - start_time;
-
-
-    // print result
-    //std::cout << "pi = " << 4.0*in / samples << endl <<  "Threads " << num_threads << std::endl;
-    std::cout << "pi2 = " << 4.0 * points_inside / samples << endl <<  "Threads " << num_threads <<
+    
+    std::cout << "pi2 = " << 4.0 * points_inside / iterations << endl <<  "Threads " << num_threads <<
             " in " <<  setprecision (5)  << run_time  << " seconds " << std::endl;
 
     return EXIT_SUCCESS;
