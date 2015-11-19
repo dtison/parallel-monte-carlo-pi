@@ -11,8 +11,11 @@
 #include <cstdlib>
 #include <iostream>
 #include <omp.h>
-#ifndef _OPENACC
-
+#ifdef _OPENACC
+#include <cuda.h>
+#include <curand.h>
+#include <curand_kernel.h>
+#else
 #include <trng/yarn2.hpp>
 #include <trng/mt19937.hpp>
 #include <trng/mt19937_64.hpp>
@@ -34,7 +37,9 @@
 
 class NumberGenerator {
 protected:
-#ifndef _OPENACC
+#ifdef _OPENACC
+    curandState state;
+#else
     trng::yarn2 r;
     // random number distribution
     trng::uniform01_dist<> u;
@@ -42,7 +47,10 @@ protected:
     uint64_t thread__interval;
 public:
     NumberGenerator(uint64_t thread__interval) : thread__interval(thread__interval){
-#ifndef _OPENACC
+#ifdef _OPENACC
+//    curand_init((unsigned long long)clock() + tId, 0, 0, &state);
+    curand_init((unsigned long long)clock(), 0, 0, &state);
+#else
         r.jump (thread__interval);
 #endif
     }
@@ -51,8 +59,8 @@ public:
 #ifndef _OPENACC
         return u(r);
 #else
-// TODO: Curand()
-        return 0.f;
+    return curand_uniform_double(&state);
+//        return 0.f;
 #endif
     }
 };
