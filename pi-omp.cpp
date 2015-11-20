@@ -24,6 +24,11 @@
 #include <trng/mt19937_64.hpp>
 #include <trng/uniform01_dist.hpp>
 
+//#include <iostream>
+//#include <prng_engine.hpp>
+#include "prng_engine.hpp"
+
+
 #endif
 //#include <limits>
 
@@ -43,6 +48,7 @@ protected:
     trng::yarn2 r;
     // random number distribution
     trng::uniform01_dist<> u;
+    sitmo::prng_engine eng;
 #endif
     uint64_t thread__interval;
 public:
@@ -52,6 +58,7 @@ public:
     curand_init((unsigned long long)clock(), 0, 0, &state);
 #else
         r.jump (thread__interval);
+        eng.discard(thread__interval);
 #endif
     }
  //   #pragma acc routine seq
@@ -63,6 +70,15 @@ public:
 //        return 0.f;
 #endif
     }
+
+    double rand2() {
+
+    return static_cast<double> (eng()) / static_cast<double >(0xFFFFFFFF);
+
+    }
+
+
+
 };
 
 /*
@@ -138,8 +154,8 @@ int main(int argc, char* argv[]) {
 
 #pragma omp for
         for (uint64_t i = 0; i < iterations; i++) {
-            double x = generator.rand();
-            double y = generator.rand();
+            double x = generator.rand2();
+            double y = generator.rand2();
             if (x * x + y * y <= 1.0) {
                 if ((i % progress) == 0) {
                  //   cout << "." << flush;
